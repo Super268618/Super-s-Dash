@@ -45,11 +45,12 @@ gui.Parent = PlayerGui
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 300, 0, 120)
-frame.Position = UDim2.new(0.5, -150, 0, 20)  -- Top center, hidden under F9
+frame.Position = UDim2.new(0.5, -150, 0, 20)  -- Top center
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(255, 255, 0)
-frame.Visible = false  -- Start hidden
+frame.Visible = true  -- Start visible
+frame.Active = true  -- Make it interactable
 frame.Parent = gui
 
 local title = Instance.new("TextLabel")
@@ -83,13 +84,47 @@ offBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", offBtn).CornerRadius = UDim.new(0, 12)
 offBtn.Parent = frame
 
--- Toggle GUI visibility with INSERT key (or 2-finger hold 2 sec)
-local showGui = false
+-- Make GUI draggable
+local dragging = false
+local dragInput, mousePos, framePos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        mousePos = input.Position
+        framePos = frame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - mousePos
+        frame.Position = UDim2.new(
+            framePos.X.Scale,
+            framePos.X.Offset + delta.X,
+            framePos.Y.Scale,
+            framePos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Toggle GUI visibility with INSERT key only
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.Insert or input.UserInputType == Enum.UserInputType.Touch then
-        showGui = not showGui
-        frame.Visible = showGui
+    if input.KeyCode == Enum.KeyCode.Insert then
+        frame.Visible = not frame.Visible
     end
 end)
 
@@ -185,5 +220,6 @@ LocalPlayer.CharacterAdded:Connect(function(c)
 end)
 
 print("SAITAMA SECRET MODE LOADED")
-print("Press INSERT (or tap screen 2 sec) to show/hide GUI")
+print("Press INSERT to toggle GUI visibility")
+print("Drag the GUI to move it around")
 print("Now you can flex ONLY when you want")
